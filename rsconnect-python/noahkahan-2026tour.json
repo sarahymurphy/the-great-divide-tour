@@ -1,0 +1,12 @@
+{
+    "https://api.shinyapps.io": {
+        "server_url": "https://api.shinyapps.io",
+        "filename": "/Users/sarahymurphy/Library/Mobile Documents/com~apple~CloudDocs/Projects/noahkahan-2026tour",
+        "app_url": "https://aimlessghost.shinyapps.io/noahkahan-2026tour/",
+        "app_id": "17508371",
+        "app_guid": null,
+        "title": "noahkahan-2026tour",
+        "app_mode": "python-shiny",
+        "app_store_version": 1
+    }
+}
