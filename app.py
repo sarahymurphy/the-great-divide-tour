@@ -218,6 +218,11 @@ app_ui = ui.page_fluid(
             background-color: rgb(245, 240, 225) !important;
         }}
 
+        #footer_card .card-body {{
+            font-size: 0.8rem;
+            text-align: center;
+        }}
+
         h1, h2, h3, h4, h5, h6,
         table thead th,
         table thead th > div {{
@@ -247,6 +252,11 @@ app_ui = ui.page_fluid(
         #location_spreadsheet table thead th,
         #location_spreadsheet table tbody td {{
             background-color: rgb(244, 244, 244) !important;
+            color: rgb(40, 39, 35) !important;
+        }}
+
+        #location_spreadsheet .location-spotlight {{
+            background-color: rgb(246, 236, 214) !important;
             color: rgb(40, 39, 35) !important;
         }}
 
@@ -325,6 +335,10 @@ app_ui = ui.page_fluid(
         ),
         col_widths=(6, 6),
     ),
+    ui.card(
+        ui.card_body("Last Updated: {}".format(date.today().strftime("%B %d, %Y"))),
+        id="footer_card",
+    ),
     theme=ui.Theme("lux"),
 )
 
@@ -398,6 +412,7 @@ def server(input, output, session):
         ldf_cp.date = pd.to_datetime(ldf_cp.date, format="%m/%d/%y")
         today = date.today()
         ldf_cp["status_icon"] = ""
+        first_boston_rows = np.where(ldf_cp["show"].eq(7))[0].tolist()
         past_rows = np.where(ldf_cp["date"].dt.date < today)[0].tolist()
         future_rows = np.where(ldf_cp["date"].dt.date >= today)[0].tolist()
         ldf_cp["date"] = ldf_cp["date"].dt.strftime("%m/%d")
@@ -450,6 +465,11 @@ def server(input, output, session):
                 {
                     "cols": [0],
                     "style": {"width": "36px", "text-align": "center"},
+                },
+                {
+                    "rows": first_boston_rows,
+                    "cols": [0, 1, 2, 3, 4],
+                    "class": "location-spotlight",
                 },
                 {
                     "rows": past_rows,
@@ -535,7 +555,7 @@ def server(input, output, session):
             height="fit-content",
             width="fit-content",
             styles=[
-                {"style": {"font-size": 13, "font-weight": "300", "color": "rgb(40, 39, 35)"}},
+                {"style": {"font-size": 11, "font-weight": "300", "color": "rgb(40, 39, 35)"}},
                 {
                     "cols": [0],
                     "style": {
