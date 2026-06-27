@@ -13,7 +13,8 @@ import base64
 # rsconnect deploy shiny '/Users/sarahymurphy/Library/Mobile Documents/com~apple~CloudDocs/Projects/noahkahan-2026tour' --name aimlessghost --title noahkahan-2026tour
 
 BASE_DIR = Path(__file__).parent
-
+www_dir = BASE_DIR / "www"
+static_assets={"/": www_dir}
 
 def _load_csv(path: Path, **kwargs) -> pd.DataFrame:
     """Load a CSV and raise a helpful error if it's missing.
@@ -52,8 +53,8 @@ def _image_to_data_uri(path: Path) -> str:
 
 
 def _build_pin_data_uri(inner_svg_data_uri: str, pin_fill: str = "#4A9C59") -> str:
-        """Build a pointer-style SVG map pin with a centered inner icon."""
-        pin_svg = f"""
+    """Build a pointer-style SVG map pin with a centered inner icon."""
+    pin_svg = f"""
 <svg xmlns='http://www.w3.org/2000/svg' width='36' height='52' viewBox='0 0 36 52'>
     <defs>
         <filter id='shadow' x='-20%' y='-20%' width='140%' height='160%'>
@@ -66,8 +67,8 @@ def _build_pin_data_uri(inner_svg_data_uri: str, pin_fill: str = "#4A9C59") -> s
     <image href='{inner_svg_data_uri}' x='9.6' y='9.6' width='16.8' height='16.8'/>
 </svg>
 """.strip()
-        encoded = base64.b64encode(pin_svg.encode("utf-8")).decode("ascii")
-        return f"data:image/svg+xml;base64,{encoded}"
+    encoded = base64.b64encode(pin_svg.encode("utf-8")).decode("ascii")
+    return f"data:image/svg+xml;base64,{encoded}"
 
 
 df_path = BASE_DIR / "noahkahan-2026tour.csv"
@@ -90,8 +91,8 @@ great_divide_img_url = _image_to_data_uri(great_divide_img_path)
 
 df = _load_csv(df_path)
 show_cols = df.columns[2:].tolist()
-df["mean"] = df[show_cols].mean(axis=1)
-df["Times Played"] = df[show_cols].count(axis=1).astype(int)
+df["mean"] = df[show_cols].mean(axis=1).round(2)
+df["count"] = df[show_cols].count(axis=1).astype(int)
 df = df.sort_values(by="mean", ignore_index=True)
 cmap = mpl.colormaps["plasma"]
 
@@ -112,7 +113,11 @@ app_ui = ui.page_fluid(
         ui.tags.link(
             rel="stylesheet",
             href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,100..900&family=League+Gothic&display=swap",
-        )
+
+        ),
+        ui.tags.link(rel="icon", type="image/svg+xml", href="favicon.svg")
+
+        
     ),
     ui.tags.style(
         """
@@ -307,27 +312,39 @@ app_ui = ui.page_fluid(
             ui.tags.div(
                 "Click on a column header to sort the table by that column.",
                 style="font-size: 0.75rem;",
-            )
+            ),
         ),
         ui.output_data_frame("setlist_spreadsheet"),
+        ui.HTML(
+            "<font size=0.75rem><center><i>Ray-Bans on your face, you've been drivin' all day. But you're here, and we're so grateful you are</i></center></font>"
+        ),
     ),
     ui.layout_columns(
         ui.card(
             ui.card_header("Tour Locations"),
             ui.output_data_frame("location_spreadsheet"),
+            ui.HTML(
+                    "<font size=0.75rem><center><i>Ooh, this towns for the record now</i></center></font>"
+                ),
         ),
         ui.layout_column_wrap(
             ui.card(
                 ui.card_header("Tour Map"),
+                ui.HTML(
+                    "<font size=0.75rem><center><i>This ain't Watertown, I'm on alien ground. I'm a collеge kid with my windows down</i></center></font>"
+                ),
                 ui.output_ui("map"),
             ),
             ui.card(
                 ui.card_header("Spotify Playlist"),
                 ui.HTML(
-                '<iframe data-testid="embed-iframe" style="border-radius:12px" ' \
-                'src="https://open.spotify.com/embed/playlist/0Hx3jZFFsQEYOk9nBPcms7?utm_source=generator&si=e4200a65f9ca4dbc" ' \
-                'width="100%" height="175" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; ' \
-                'encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>'
+                    '<iframe data-testid="embed-iframe" style="border-radius:12px" '
+                    'src="https://open.spotify.com/embed/playlist/0Hx3jZFFsQEYOk9nBPcms7?utm_source=generator&si=e4200a65f9ca4dbc" '
+                    'width="100%" height="175" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; '
+                    'encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>'
+                ),
+                ui.HTML(
+                    "<font size=0.75rem><center><i>and I spent the whole night singin' \"Oh, my, my, what a time to be alive\"</i></center></font>"
                 ),
             ),
             width=1,
@@ -336,6 +353,9 @@ app_ui = ui.page_fluid(
         col_widths=(6, 6),
     ),
     ui.card(
+        ui.HTML(
+            "<font size=0.75rem><center><i>Last August angst and a pointless night. Oh, and the feeling of being alive for the first time in a long time</i></center></font>"
+        ),
         ui.card_body("Last Updated: {}".format(date.today().strftime("%B %d, %Y"))),
         id="footer_card",
     ),
@@ -348,7 +368,9 @@ def server(input, output, session):
     @render.ui
     def map():
         map_center = [ldf.latitude.mean(), ldf.longitude.mean()]
-        folium_map = folium.Map(location=map_center, zoom_start=4, tiles="OpenStreetMap")
+        folium_map = folium.Map(
+            location=map_center, zoom_start=4, tiles="OpenStreetMap"
+        )
 
         duplicate_locations = set(
             tuple(values)
@@ -369,7 +391,11 @@ def server(input, output, session):
                 + ldf.iloc[l]["venue"]
             )
             location_key = (ldf.iloc[l]["city"], ldf.iloc[l]["venue"])
-            icon_url = bugs_map_icon_url if location_key in duplicate_locations else bug_map_icon_url
+            icon_url = (
+                bugs_map_icon_url
+                if location_key in duplicate_locations
+                else bug_map_icon_url
+            )
             folium.Marker(
                 location=[ldf.iloc[l].latitude, ldf.iloc[l].longitude],
                 icon=folium.features.CustomIcon(
@@ -488,29 +514,63 @@ def server(input, output, session):
     def setlist_spreadsheet():
         album_colors = {
             "Stick Season": {"bg": "#C2C8A0", "bg_light": "#E9ECD8", "text": "#3F4034"},
-            "The Great Divide": {"bg": "#D9C4B8", "bg_light": "#F1E5DE", "text": "#261A0F"},
-            "Cape Elizabeth": {"bg": "#8FD2DA", "bg_light": "#D8F0F3", "text": "#012326"},
+            "The Great Divide": {
+                "bg": "#D9C4B8",
+                "bg_light": "#F1E5DE",
+                "text": "#261A0F",
+            },
+            "Cape Elizabeth": {
+                "bg": "#8FD2DA",
+                "bg_light": "#D8F0F3",
+                "text": "#012326",
+            },
         }
 
         song_col = next((col for col in df.columns if str(col).lower() == "song"), None)
-        album_col = next((col for col in df.columns if str(col).lower() == "album"), None)
+        album_col = next(
+            (col for col in df.columns if str(col).lower() == "album"), None
+        )
         mean_col = next((col for col in df.columns if str(col).lower() == "mean"), None)
-        times_played_col = next((col for col in df.columns if str(col).lower() == "times played"), None)
+        times_played_col = next(
+            (col for col in df.columns if str(col).lower() == "count"), None
+        )
 
         metric_cols = [col for col in df.columns if col not in {song_col, album_col}]
         if mean_col in metric_cols and times_played_col in metric_cols:
             metric_cols.remove(times_played_col)
             metric_cols.insert(metric_cols.index(mean_col) + 1, times_played_col)
 
-        ordered_cols = [col for col in [album_col, song_col] if col is not None] + metric_cols
+        ordered_cols = [
+            col for col in [album_col, song_col] if col is not None
+        ] + metric_cols
         display_df = df.loc[:, ordered_cols].copy()
 
-        key_cols = {"mean", "song", "album", "times played"}
-        key_col_idxs = [idx for idx, col in enumerate(ordered_cols) if str(col).lower() in key_cols]
-        light_col_idxs = [idx for idx, col in enumerate(ordered_cols) if str(col).lower() not in key_cols]
-        centered_cols = [idx for idx, col in enumerate(ordered_cols) if str(col).lower() not in {"song", "album"}]
-        song_col_idx = next((idx for idx, col in enumerate(ordered_cols) if str(col).lower() == "song"), None)
-        album_col_idx = next((idx for idx, col in enumerate(ordered_cols) if str(col).lower() == "album"), None)
+        key_cols = {"mean", "song", "album", "count"}
+        key_col_idxs = [
+            idx for idx, col in enumerate(ordered_cols) if str(col).lower() in key_cols
+        ]
+        light_col_idxs = [
+            idx
+            for idx, col in enumerate(ordered_cols)
+            if str(col).lower() not in key_cols
+        ]
+        centered_cols = [
+            idx
+            for idx, col in enumerate(ordered_cols)
+            if str(col).lower() not in {"song", "album"}
+        ]
+        song_col_idx = next(
+            (idx for idx, col in enumerate(ordered_cols) if str(col).lower() == "song"),
+            None,
+        )
+        album_col_idx = next(
+            (
+                idx
+                for idx, col in enumerate(ordered_cols)
+                if str(col).lower() == "album"
+            ),
+            None,
+        )
         album_cell_classes = {
             "Stick Season": "album-cell-stick-season",
             "The Great Divide": "album-cell-great-divide",
@@ -555,7 +615,13 @@ def server(input, output, session):
             height="fit-content",
             width="fit-content",
             styles=[
-                {"style": {"font-size": 11, "font-weight": "300", "color": "rgb(40, 39, 35)"}},
+                {
+                    "style": {
+                        "font-size": 11,
+                        "font-weight": "300",
+                        "color": "rgb(40, 39, 35)",
+                    }
+                },
                 {
                     "cols": [0],
                     "style": {
@@ -570,11 +636,13 @@ def server(input, output, session):
                 {"cols": [2], "style": {"width": "90px"}},
                 {"cols": centered_cols, "style": {"text-align": "center"}},
                 *album_styles,
-                *([
-                    {"cols": [song_col_idx], "style": {"font-weight": "700"}}
-                ] if song_col_idx is not None else []),
+                *(
+                    [{"cols": [song_col_idx], "style": {"font-weight": "700"}}]
+                    if song_col_idx is not None
+                    else []
+                ),
             ],
         )
 
 
-app = App(app_ui, server)
+app = App(app_ui, server, static_assets=static_assets)
