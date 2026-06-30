@@ -1,6 +1,10 @@
 # Noah Kahan's 2026 The Great Divide Tour
 
 <p align="center">
+
+<img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/sarahymurphy/the-great-divide-tour">
+
+
 <br>
 Code for the <a href="https://aimlessghost.shinyapps.io/noahkahan-2026tour/">tour spreadsheet Shiny app</a>.
 <br>
