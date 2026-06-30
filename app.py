@@ -228,6 +228,17 @@ app_ui = ui.page_fluid(
             text-align: center;
         }}
 
+        .footer-league-gothic,
+        .footer-league-gothic * {{
+            font-family: 'League Gothic', sans-serif !important;
+            font-size: 1.25rem;
+            letter-spacing: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 780 !important;
+            text-align: center;
+            font-style: normal;
+        }}
+
         h1, h2, h3, h4, h5, h6,
         table thead th,
         table thead th > div {{
@@ -357,8 +368,12 @@ app_ui = ui.page_fluid(
             "<font size=0.75rem><center><i>Last August angst and a pointless night. Oh, and the feeling of being alive for the first time in a long time</i></center></font>"
         ),
         ui.card_body("Last Updated: {}".format(date.today().strftime("%B %d, %Y"))),
+
         id="footer_card",
     ),
+            ui.HTML(
+            "<div class='footer-league-gothic'>Experience is everything</div>"
+        ),
     theme=ui.Theme("lux"),
 )
 
