@@ -14,7 +14,8 @@ import base64
 
 BASE_DIR = Path(__file__).parent
 www_dir = BASE_DIR / "www"
-static_assets={"/": www_dir}
+img_dir = BASE_DIR / "img"
+static_assets = {"/": www_dir, "/img": img_dir}
 
 def _load_csv(path: Path, **kwargs) -> pd.DataFrame:
     """Load a CSV and raise a helpful error if it's missing.
@@ -79,6 +80,8 @@ bug_slash_icon_path = BASE_DIR / "img" / "bug-slash-solid-full.svg"
 cape_elizabeth_img_path = BASE_DIR / "img" / "cape-elizabeth.png"
 stick_season_img_path = BASE_DIR / "img" / "stick-season.png"
 great_divide_img_path = BASE_DIR / "img" / "the-great-divide.jpg"
+busyhead_img_path = BASE_DIR / "img" / "busyhead.jpeg"
+tour_photo_paths = sorted((BASE_DIR / "img").glob("IMG_*.jpg"))
 
 bug_icon_url = _svg_to_data_uri(bug_icon_path)
 bugs_icon_url = _svg_to_data_uri(bugs_icon_path)
@@ -88,6 +91,8 @@ bugs_map_icon_url = _build_pin_data_uri(bugs_icon_url, pin_fill="#261A0F")
 cape_elizabeth_img_url = _image_to_data_uri(cape_elizabeth_img_path)
 stick_season_img_url = _image_to_data_uri(stick_season_img_path)
 great_divide_img_url = _image_to_data_uri(great_divide_img_path)
+busyhead_img_url = _image_to_data_uri(busyhead_img_path)
+tour_photo_urls = [f"img/{path.name}" for path in tour_photo_paths]
 
 df = _load_csv(df_path)
 show_cols = df.columns[2:].tolist()
@@ -190,7 +195,8 @@ app_ui = ui.page_fluid(
 
         #setlist_spreadsheet .album-cell-stick-season,
         #setlist_spreadsheet .album-cell-great-divide,
-        #setlist_spreadsheet .album-cell-cape-elizabeth {{
+        #setlist_spreadsheet .album-cell-cape-elizabeth,
+        #setlist_spreadsheet .album-cell-busyhead {{
             color: transparent !important;
             background-repeat: no-repeat;
             background-position: center;
@@ -207,6 +213,10 @@ app_ui = ui.page_fluid(
 
         #setlist_spreadsheet .album-cell-cape-elizabeth {{
             background-image: url('{cape_elizabeth_album_img}');
+        }}
+
+        #setlist_spreadsheet .album-cell-busyhead {{
+            background-image: url('{busyhead_album_img}');
         }}
 
         .card-header {{
@@ -226,6 +236,91 @@ app_ui = ui.page_fluid(
         #footer_card .card-body {{
             font-size: 0.8rem;
             text-align: center;
+        }}
+
+        .footer-photo-gallery {{
+            margin: 2px 0 4px 0;
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 4px;
+            width: 100%;
+            overflow-x: auto;
+            padding-bottom: 0;
+        }}
+
+        .footer-photo-button {{
+            border: none;
+            background: transparent;
+            padding: 0;
+            cursor: pointer;
+            border-radius: 8px;
+            line-height: 0;
+            flex: 0 0 auto;
+            height: clamp(200px, 13vw, 184px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+
+        .footer-photo-thumb {{
+            height: 100%;
+            width: auto;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.18);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            transition: transform 0.16s ease, box-shadow 0.16s ease;
+            display: block;
+        }}
+
+        @media (max-width: 700px) {{
+            .footer-photo-button {{
+                height: clamp(86px, 22vw, 146px);
+            }}
+        }}
+
+        .footer-photo-button:hover .footer-photo-thumb,
+        .footer-photo-button:focus-visible .footer-photo-thumb {{
+            transform: translateY(-1px) scale(1.03);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }}
+
+        .footer-photo-modal {{
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1200;
+            padding: 16px;
+        }}
+
+        .footer-photo-modal.is-open {{
+            display: flex;
+        }}
+
+        .footer-photo-modal img {{
+            max-width: min(92vw, 1100px);
+            max-height: 88vh;
+            border-radius: 10px;
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35);
+        }}
+
+        .footer-photo-close {{
+            position: absolute;
+            top: 16px;
+            right: 18px;
+            border: none;
+            background: rgba(255, 255, 255, 0.95);
+            color: rgb(40, 39, 35);
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
+            font-size: 1.35rem;
+            cursor: pointer;
+            line-height: 1;
         }}
 
         .footer-league-gothic,
@@ -306,6 +401,7 @@ app_ui = ui.page_fluid(
             stick_season_album_img=stick_season_img_url,
             great_divide_album_img=great_divide_img_url,
             cape_elizabeth_album_img=cape_elizabeth_img_url,
+            busyhead_album_img=busyhead_img_url,
         )
     ),
     ui.card(
@@ -335,8 +431,8 @@ app_ui = ui.page_fluid(
             ui.card_header("Tour Locations"),
             ui.output_data_frame("location_spreadsheet"),
             ui.HTML(
-                    "<font size=0.75rem><center><i>Ooh, this towns for the record now</i></center></font>"
-                ),
+                "<font size=0.75rem><center><i>Ooh, this towns for the record now</i></center></font>"
+            ),
         ),
         ui.layout_column_wrap(
             ui.card(
@@ -364,16 +460,80 @@ app_ui = ui.page_fluid(
         col_widths=(6, 6),
     ),
     ui.card(
-        ui.HTML(
-            "<font size=0.75rem><center><i>Last August angst and a pointless night. Oh, and the feeling of being alive for the first time in a long time</i></center></font>"
+        ui.card_body(
+            ui.tags.div(
+                *[
+                    ui.tags.button(
+                        ui.tags.img(
+                            src=photo_url,
+                            class_="footer-photo-thumb",
+                            alt=f"Tour photo {idx + 1}",
+                        ),
+                        type="button",
+                        class_="footer-photo-button",
+                        **{
+                            "data-full-src": photo_url,
+                            "aria-label": f"Open tour photo {idx + 1}",
+                        },
+                    )
+                    for idx, photo_url in enumerate(tour_photo_urls)
+                ],
+                class_="footer-photo-gallery",
+            ),
+            ui.HTML(
+                "<font size=0.75rem><center><i>Last August angst and a pointless night. Oh, and the feeling of being alive for the first time in a long time</i></center></font>"
+            ),
+            ui.tags.div("Last Updated: {}".format(date.today().strftime("%B %d, %Y"))),
+            ui.tags.div(
+                ui.tags.button("\u00d7", type="button", class_="footer-photo-close", **{"aria-label": "Close image preview"}),
+                ui.tags.img(id="footer_photo_modal_img", alt="Expanded tour photo"),
+                id="footer_photo_modal",
+                class_="footer-photo-modal",
+                **{"aria-hidden": "true"},
+            ),
         ),
-        ui.card_body("Last Updated: {}".format(date.today().strftime("%B %d, %Y"))),
-
         id="footer_card",
     ),
-            ui.HTML(
-            "<div class='footer-league-gothic'>Experience is everything</div>"
-        ),
+    ui.tags.script(
+        """
+        document.addEventListener('click', function (event) {
+            const modal = document.getElementById('footer_photo_modal');
+            const modalImg = document.getElementById('footer_photo_modal_img');
+            if (!modal || !modalImg) return;
+
+            const thumbButton = event.target.closest('.footer-photo-button');
+            if (thumbButton) {
+                const src = thumbButton.getAttribute('data-full-src');
+                if (!src) return;
+                modalImg.src = src;
+                modal.classList.add('is-open');
+                modal.setAttribute('aria-hidden', 'false');
+                return;
+            }
+
+            const clickedClose = event.target.closest('.footer-photo-close');
+            const clickedBackdrop = event.target === modal;
+            if (clickedClose || clickedBackdrop) {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+                modalImg.removeAttribute('src');
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key !== 'Escape') return;
+            const modal = document.getElementById('footer_photo_modal');
+            const modalImg = document.getElementById('footer_photo_modal_img');
+            if (!modal || !modal.classList.contains('is-open')) return;
+            modal.classList.remove('is-open');
+            modal.setAttribute('aria-hidden', 'true');
+            if (modalImg) modalImg.removeAttribute('src');
+        });
+        """
+    ),
+    ui.HTML(
+        "<div class='footer-league-gothic'>Experience is everything</div>"
+    ),
     theme=ui.Theme("lux"),
 )
 
@@ -539,6 +699,11 @@ def server(input, output, session):
                 "bg_light": "#D8F0F3",
                 "text": "#012326",
             },
+            "Busyhead": {
+                "bg": "#F9F0BF",
+                "bg_light": "#F8F4E1",
+                "text": "#5C5308",
+            },
         }
 
         song_col = next((col for col in df.columns if str(col).lower() == "song"), None)
@@ -590,6 +755,7 @@ def server(input, output, session):
             "Stick Season": "album-cell-stick-season",
             "The Great Divide": "album-cell-great-divide",
             "Cape Elizabeth": "album-cell-cape-elizabeth",
+            "Busyhead": "album-cell-busyhead",
         }
 
         album_styles = []
