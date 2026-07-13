@@ -81,6 +81,7 @@ cape_elizabeth_img_path = BASE_DIR / "img" / "cape-elizabeth.png"
 stick_season_img_path = BASE_DIR / "img" / "stick-season.png"
 great_divide_img_path = BASE_DIR / "img" / "the-great-divide.jpg"
 busyhead_img_path = BASE_DIR / "img" / "busyhead.jpeg"
+iwasiam_img_path = BASE_DIR / "img" / "iwas_iam.jpg"
 tour_photo_paths = sorted((BASE_DIR / "img").glob("IMG_*.jpg"))
 
 bug_icon_url = _svg_to_data_uri(bug_icon_path)
@@ -92,6 +93,7 @@ cape_elizabeth_img_url = _image_to_data_uri(cape_elizabeth_img_path)
 stick_season_img_url = _image_to_data_uri(stick_season_img_path)
 great_divide_img_url = _image_to_data_uri(great_divide_img_path)
 busyhead_img_url = _image_to_data_uri(busyhead_img_path)
+iwasiam_img_url = _image_to_data_uri(iwasiam_img_path)
 tour_photo_urls = [f"img/{path.name}" for path in tour_photo_paths]
 
 df = _load_csv(df_path)
@@ -196,7 +198,8 @@ app_ui = ui.page_fluid(
         #setlist_spreadsheet .album-cell-stick-season,
         #setlist_spreadsheet .album-cell-great-divide,
         #setlist_spreadsheet .album-cell-cape-elizabeth,
-        #setlist_spreadsheet .album-cell-busyhead {{
+        #setlist_spreadsheet .album-cell-busyhead,
+        #setlist_spreadsheet .album-cell-i-was-i-am {{
             color: transparent !important;
             background-repeat: no-repeat;
             background-position: center;
@@ -217,6 +220,10 @@ app_ui = ui.page_fluid(
 
         #setlist_spreadsheet .album-cell-busyhead {{
             background-image: url('{busyhead_album_img}');
+        }}
+
+        #setlist_spreadsheet .album-cell-i-was-i-am {{
+            background-image: url('{iwasiam_album_img}');
         }}
 
         .card-header {{
@@ -402,6 +409,7 @@ app_ui = ui.page_fluid(
             great_divide_album_img=great_divide_img_url,
             cape_elizabeth_album_img=cape_elizabeth_img_url,
             busyhead_album_img=busyhead_img_url,
+            iwasiam_album_img=iwasiam_img_url,
         )
     ),
     ui.card(
@@ -692,17 +700,22 @@ def server(input, output, session):
             "The Great Divide": {
                 "bg": "#D9C4B8",
                 "bg_light": "#F1E5DE",
-                "text": "#261A0F",
+                "text": "#3E2B18",
             },
             "Cape Elizabeth": {
                 "bg": "#8FD2DA",
                 "bg_light": "#D8F0F3",
-                "text": "#012326",
+                "text": "#02363A",
             },
             "Busyhead": {
                 "bg": "#F9F0BF",
                 "bg_light": "#F8F4E1",
-                "text": "#5C5308",
+                "text": "#123E5A",
+            },
+            "I was/I am": {
+                "bg": "#F2AD80FF",
+                "bg_light": "#F7CFB7",
+                "text": "#2B3D55",
             },
         }
 
@@ -756,6 +769,7 @@ def server(input, output, session):
             "The Great Divide": "album-cell-great-divide",
             "Cape Elizabeth": "album-cell-cape-elizabeth",
             "Busyhead": "album-cell-busyhead",
+            "I was/I am": "album-cell-i-was-i-am",
         }
 
         album_styles = []
